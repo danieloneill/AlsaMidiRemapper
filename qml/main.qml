@@ -279,6 +279,8 @@ Window {
         for( let a=0; a < noteModel.count; a++ )
         {
             const noteObj = noteModel.get(a);
+            if( !noteObj['enabled'] )
+                continue;
             newmap[ noteObj['sourceNote'] ] = noteObj['mappedNote'];
         }
         AlsaProxy.setMap(newmap);
