@@ -8,7 +8,7 @@ import QtQuick.Dialogs
 
 Window {
     id: mainWindow
-    width: 350
+    width: 450
     height: 1200
     visible: true
     title: qsTr("Alsa Midi Remapper")
@@ -229,6 +229,17 @@ Window {
                 }
                 validator: IntValidator {}
             }
+	    SpinBox {
+		    stepSize: 5
+		    to: 250
+		    from: 0
+		    value: rowDelegate.modelData['latency'] || 0
+		    editable: false
+		    onValueModified: {
+			    noteModel.setProperty(rowDelegate.index, "latency", value);
+			    mainWindow.saveSettings();
+		    }
+	    }
             //Button { text: qsTr('⟳'); enabled: rowEnabled.checked }
         }
 
@@ -259,7 +270,7 @@ Window {
             mainWindow.notemap = {};
             for( let entry of dataObj['entries'] ) {
                 mainWindow.notemap[entry['source']] = noteModel.count;
-                const noteObj = { 'enabled':entry['enabled'], 'activity':false, 'sourceNote':entry['source'], 'mappedNote':entry['mapped'] };
+                const noteObj = { 'enabled':entry['enabled'], 'activity':false, 'sourceNote':entry['source'], 'mappedNote':entry['mapped'], 'latency':entry['latency'] };
                 noteModel.append(noteObj);
             }
         } catch(e) {
@@ -279,9 +290,7 @@ Window {
         for( let a=0; a < noteModel.count; a++ )
         {
             const noteObj = noteModel.get(a);
-            if( !noteObj['enabled'] )
-                continue;
-            newmap[ noteObj['sourceNote'] ] = noteObj['mappedNote'];
+            newmap[ noteObj['sourceNote'] ] = { 'note':noteObj['mappedNote'], 'latency':noteObj['latency'], 'enabled':noteObj['enabled'] };
         }
         AlsaProxy.setMap(newmap);
     }
@@ -297,7 +306,7 @@ Window {
         for( let a=0; a < noteModel.count; a++ )
         {
             const noteObj = noteModel.get(a);
-            entries.push( { 'enabled':noteObj['enabled'], 'source':noteObj['sourceNote'], 'mapped':noteObj['mappedNote'] } );
+            entries.push( { 'enabled':noteObj['enabled'], 'source':noteObj['sourceNote'], 'mapped':noteObj['mappedNote'], 'latency':noteObj['latency'] } );
         }
         let dataObj = { 'entries':entries };
         return JSON.stringify( dataObj );
@@ -324,7 +333,7 @@ Window {
             //console.log(`Event: t=${event.type} c=${event.channel} n=${event.note} d=${event.duration} v=${event.velocity}`);
             if( !mainWindow.notemap.hasOwnProperty(event.note) ) {
                 mainWindow.notemap[event.note] = noteModel.count;
-                const noteObj = { 'enabled':true, 'activity':(event.type === "SND_SEQ_EVENT_NOTEON"), 'sourceNote':event.note, 'mappedNote':event.note };
+                const noteObj = { 'enabled':true, 'activity':(event.type === "SND_SEQ_EVENT_NOTEON"), 'sourceNote':event.note, 'mappedNote':event.note, 'latency':0 };
                 noteModel.append(noteObj);
                 mainWindow.saveSettings();
             } else {

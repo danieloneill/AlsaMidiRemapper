@@ -3,6 +3,9 @@ QT += gui quick quickcontrols2
 CONFIG += link_pkgconfig
 PKGCONFIG += alsa
 
+QMAKE_CXXFLAGS_RELEASE -= -O2
+QMAKE_CXXFLAGS_RELEASE += -O3
+
 SOURCES += src/main.cpp \
     src/alsaproxy.cpp
 

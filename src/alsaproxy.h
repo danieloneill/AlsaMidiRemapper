@@ -1,6 +1,7 @@
 #ifndef ALSAPROXY_H
 #define ALSAPROXY_H
 
+#include <QDebug>
 #include <QObject>
 #include <QMap>
 #include <QSocketNotifier>
@@ -8,6 +9,47 @@
 
 #include <alsa/asoundlib.h>
 #include <sys/poll.h>
+
+class MapEntry : public QObject
+{
+	Q_OBJECT
+
+	public:
+		MapEntry(QObject *parent = nullptr)
+			: QObject(parent),
+			m_enabled{true},
+			m_note_in{0},
+			m_note_out{0},
+			m_latency{0}
+		{
+		}
+		MapEntry(const MapEntry &in)
+			: QObject()
+		{
+			m_enabled = in.m_enabled;
+			m_note_in = in.m_note_in;
+			m_note_out = in.m_note_out;
+			m_latency = in.m_latency;
+		}
+		MapEntry &operator=(const MapEntry &in)
+		{
+			if( this != &in )
+			{
+				m_enabled = in.m_enabled;
+				m_note_in = in.m_note_in;
+				m_note_out = in.m_note_out;
+				m_latency = in.m_latency;
+			}
+			return *this;
+		}
+
+		bool m_enabled;
+		quint16	m_note_in;
+		quint16	m_note_out;
+		quint16	m_latency;
+};
+Q_DECLARE_METATYPE(MapEntry)
+QDebug operator<<(QDebug debug, const MapEntry &c);
 
 class AlsaProxy : public QObject
 {
@@ -39,7 +81,9 @@ private:
     snd_seq_t *m_seqHandle = nullptr;
     QVector<pollfd> m_pollfds;
     QList<QSocketNotifier *> m_notifiers;
-    QMap< quint8, quint8 > m_map;
+    QMap< quint8, MapEntry > m_map;
+    QMap< quint8, bool > m_xhit_sentinel;
+    QMap< quint8, quint16 > m_latency;
 
 private slots:
     void handleInput();
